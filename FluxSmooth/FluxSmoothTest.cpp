@@ -78,9 +78,18 @@ AVSValue __cdecl Create_FluxSmoothST(AVSValue args, void * user_data, IScriptEnv
 	return 0; // Unreached
 }
 
-extern "C" __declspec(dllexport) const char * __stdcall AvisynthPluginInit2(IScriptEnvironment * env)
-{
-	env->AddFunction("FluxSmoothT", "c[temporal_threshold]i[opt]i",
+/* New 2.6 requirement!!! */
+// Declare and initialise server pointers static storage.
+const AVS_Linkage *AVS_linkage = 0;
+
+/* New 2.6 requirement!!! */
+// DLL entry point called from LoadPlugin() to setup a user plugin.
+extern "C" __declspec(dllexport) const char* __stdcall
+AvisynthPluginInit3(IScriptEnvironment* env, const AVS_Linkage* const vectors) {
+  /* New 2.6 requirement!!! */
+  // Save the server pointers.
+  AVS_linkage = vectors
+        env->AddFunction("FluxSmoothT", "c[temporal_threshold]i[opt]i",
 		Create_FluxSmoothT, 0);
 	env->AddFunction("FluxSmoothST", "c[temporal_threshold]i[spatial_threshold]i[opt]i",
 		Create_FluxSmoothST, 0);
