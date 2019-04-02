@@ -6,8 +6,11 @@
 		<h1>FluxSmooth</h1>
 		<h3>An Avisynth filter for smoothing of fluctuations</h3>
 		<p><b>By Ross Thomas &lt;ross@grinfinity.com&gt;</b></p>
+		<p><b>Rewrite by Ferenc Pinter</b></p>
 		<p><b>There is no copyright on this code, and there are no conditions on its 
 				distribution or use. Do with it what you will.</b></p>
+		<h3>Latest version:</h3>
+		<p>FluxSmooth v1.3 (20190402) <a href=" https://github.com/pinterf/FluxSmooth"> https://github.com/pinterf/FluxSmooth</a></p>
 		<h2>Description</h2>
 		<p>One of the fundamental properties of noise is that it's random. One of the 
 			fundamental properties of motion is that it's not. This is the premise behind 
@@ -26,14 +29,11 @@
 		<p>This filter seems to remove almost all noise from low-noise sources (such as 
 			DVD) and a lot of noise from high-noise sources (such as cable TV captures), 
 			while maintaining a good amount of detail.</p>
-		<p>If your CPU supports integer SSE operations (Intel Pentium III and better, AMD 
-			Athlon and better) an optimized version of the algorithm will be used.</p>
-		<P>Using FluxSmoothT instead of FluxSmoothST for temporal-only smoothing is much, 
-			much faster (50% faster on my system).</P>
+		<P>Using FluxSmoothT instead of FluxSmoothST for temporal-only smoothing is faster.</P>
 		<h2>Usage</h2>
 		<blockquote>
-			<P>FluxSmoothT([clip], int <I>temporal_threshold</I>)</P>
-			<P>FluxSmoothST([clip], int <i>temporal_threshold</i>, int <i>spatial_threshold</i>)</P>
+			<P>FluxSmoothT([clip], int <I>temporal_threshold</I>, bool <I>luma</I>, bool <I>chroma</I>, int <I>opt</I>)</P>
+			<P>FluxSmoothST([clip], int <i>temporal_threshold</i>, int <i>spatial_threshold</i>, bool <I>luma</I>, bool <I>chroma</I>, int <I>opt</I>)</P>
 		</blockquote>
 		<table border="1">
 			<tr>
@@ -49,6 +49,7 @@
 				<td>
 					<p>Temporal neighbour pixels within this threshold from the current pixel are 
 						included in the average.</p>
+					<p>The threshold is normalized to match with the old 8 bit clips, you can keep the same value for 10-16 bit clips to have the same effect</p>
 					<p>If set to -1, no temporal smoothing occurs. (Cannot be set to -1 in 
 						FluxSmoothT.)</p>
 				</td>
@@ -59,9 +60,35 @@
 				<td>
 					<p>Spatial neighbour pixels within this threshold from the current pixel are 
 						included in the average.</p>
+					<p>The threshold is normalized to match with the old 8 bit clips, you can keep the same value for 10-16 bit clips to have the same effect</p>
 					<p>If set to -1, no spatial smoothing occurs.</p>
 				</td>
 				<td>7</td>
+			</tr>
+			<tr>
+				<td><i>luma</i></td>
+				<td>
+					<p>Enables luma channel processing</p>
+					<p>If set to false, luma (Y) channel is simply copied. Ineffective for RGB clips</p>
+				</td>
+				<td>true</td>
+			</tr>
+			<tr>
+				<td><i>chroma</i></td>
+				<td>
+					<p>Enables chroma channel processing</p>
+					<p>If set to false, chroma (U/V) channels are simply copied. Ineffective for RGB clips</p>
+				</td>
+				<td>true</td>
+			</tr>
+			<tr>
+				<td><i>opt</i></td>
+				<td>
+					<p>Debug parameter for directly choosing optimization</p>
+					<p>0=C, 1=SSE2, 2=SSE4.1, 3=AVX2, -1: automatic</p>
+					<p>If set to -1, the fastest one is chosen automatically</p>
+				</td>
+				<td>-1</td>
 			</tr>
 		</table>
 		<h2>Known Issues</h2>
@@ -70,18 +97,10 @@
 			The very edges of the frame are unprocessed.
 			<li>
 			The very first and very last frame of a clip is unprocessed.
-			<LI>
-				Appears to cause an access violation when used with n-pass encoding in CCE. 
-				I've been unable to duplicate this. Might've been related to the memory leak 
-				fixed by fabrice.</LI>
-		</ul>
-		<h2>TODO</h2>
-		<ul>
-			<li>
-				Optimize SSE code with regard to pairing, stalls, and so on.</li>
 		</ul>
 		<h2>Author</h2>
 		<p>Ross Thomas &lt;ross@grinfinity.com&gt;</p>
+		<p>Ferenc Pinter https://github.com/pinterf</p>
 		<h2>History</h2>
 		<table border="1">
 			<tr>
@@ -90,6 +109,21 @@
 				<th>
 					Description</th>
 			</tr>
+			<TR>
+				<TD>1.3 (pinterf)<br />20190402</TD>
+                <TD>project moved to github: https://github.com/pinterf/FluxSmooth<br />
+                    Built using Visual Studio 2017, additional LLVM 8.0 clang support<br />
+                    Changed to AVS 2.6 plugin interface<br />
+                    x64 build for Avisynth+<br />
+                    Added version resource to DLL<br />
+                    Removed MMX support, requires SSE2. (Though pure C is still available in the source)<br />
+                    Dropped all inline assembly, new SIMD intrinsics based on C code, SSE2, SSE4.1 and AVX2 optimizations<br />
+                    Single DLL, optimizations for different CPU instruction sets are chosen automatically.<br />
+                    Reports MT Modes for Avisynth+: MT_NICE_FILTER<br />
+                    Added Y, YV411, YV16 and YV24, 10-16 bits 4:2:0, 4:2:2, 4:4:4, planar RGB(A) 8-16 bits support besides existing YV12<br />
+                    (YUY2 support was kept by a behind-the-scene YV16 to-from conversion. Conversion is lossless but slower than using native YV16)<br />
+                    New parameters: bool "luma", bool "chroma" (default true) to disable processing of luma/chroma planes</TD>
+			</TR>
 			<TR>
 				<TD>1.1b</TD>
 				<TD>Fixed assuming previous and next frame pitches were the same as
