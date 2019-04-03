@@ -6,6 +6,7 @@ By Ross Thomas <ross@grinfinity.com>
 There is no copyright on this code, and there are no conditions
 on its distribution or use. Do with it what you will.
 
+## Changelog
 - (20190402) v1.3, rewrite by pinterf
   - project moved to github: https://github.com/pinterf/FluxSmooth
   - Built using Visual Studio 2017, additional LLVM 8.0 clang support
@@ -26,11 +27,11 @@ on its distribution or use. Do with it what you will.
   http://web.archive.org/web/20070225212908/http://bengal.missouri.edu/~kes25c/FluxSmooth-1.1b.zip
   https://forum.doom9.org/showthread.php?t=38296
 
-Installation note: Previous DLL versions named differently (FluxSmoothSSE2.DLL, FluxSmoothSSSE3) should be deleted from your plugin folder.
+## Notes
+Previous DLL versions named differently (FluxSmoothSSE2.DLL, FluxSmoothSSSE3) should be deleted from your plugin folder.
 From version 1.3 a single DLL exists, which automatically chosen CPU optimization (SSE2, SSE4.1, AVX2)
 
-Links
-=====
-Project: https://github.com/pinterf/FluxSmooth
-Forum: ?
-Additional info: http://avisynth.nl/index.php/FluxSmooth
+## Links
+- Project: https://github.com/pinterf/FluxSmooth
+- Forum: https://forum.doom9.org/showthread.php?t=176246
+- Additional info: http://avisynth.nl/index.php/FluxSmooth
