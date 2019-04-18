@@ -30,6 +30,15 @@ FluxSmoothST::FluxSmoothST(PClip _child, int _temporal_threshold, int _spatial_t
   for (int i = 2; i < 16; ++i)
     scaletab[i] = (int)(32768.0 / i + 0.5);
 
+  const bool goodAVX512 = ((env->GetCPUFlags() & CPUF_AVX512F) == CPUF_AVX512F) && (env->GetCPUFlags() & CPUF_AVX512BW) == CPUF_AVX512BW;
+
+#ifndef FLUXSMOOTH_AVX512_ENABLED
+  if (opt == USE_OPT_AVX512)
+    env->ThrowError("FluxSmoothST: cannot apply opt: this DLL version does not support AVX512");
+#endif
+
+  if (opt == USE_OPT_AVX512 && !goodAVX512)
+    env->ThrowError("FluxSmoothST: cannot apply opt: AVX512F and AVX512BW is needed");
   if (opt == USE_OPT_AVX2 && !(env->GetCPUFlags() & CPUF_AVX2))
     env->ThrowError("FluxSmoothST: cannot apply opt: AVX2 is not supported");
   if (opt == USE_OPT_SSE41 && !(env->GetCPUFlags() & CPUF_SSE4_1))
@@ -51,8 +60,13 @@ FluxSmoothST::FluxSmoothST(PClip _child, int _temporal_threshold, int _spatial_t
 
     const int actual_width = vi.width >> vi.GetPlaneWidthSubsampling(current_planes[i]);
     if (bits_per_pixel == 8) {
+#ifdef FLUXSMOOTH_AVX512_ENABLED
+      if ((actual_width >= 1 + 64 + 1) && ((goodAVX512 && opt < 0) || opt >= USE_OPT_AVX512))
+        proc_ST[i] = fluxST_avx512;
+      else
+#endif
       if ((actual_width >= 1 + 32 + 1) && (((env->GetCPUFlags() & CPUF_AVX2) == CPUF_AVX2 && opt < 0) || opt >= USE_OPT_AVX2))
-        proc_ST[i] = fluxST_avx2; // no speed gain
+        proc_ST[i] = fluxST_avx2;
       else if ((actual_width >= 1 + 16 + 1) && (((env->GetCPUFlags() & CPUF_SSE4_1) == CPUF_SSE4_1 && opt < 0) || opt >= USE_OPT_SSE41))
         proc_ST[i] = fluxST_sse41;
       else if ((actual_width >= 1 + 16 + 1) && (((env->GetCPUFlags() & CPUF_SSE2) == CPUF_SSE2 && opt < 0) || opt >= USE_OPT_SSE2))
@@ -61,8 +75,13 @@ FluxSmoothST::FluxSmoothST(PClip _child, int _temporal_threshold, int _spatial_t
         proc_ST[i] = fluxST_C<uint8_t>;
     }
     else {
+#ifdef FLUXSMOOTH_AVX512_ENABLED
+      if ((actual_width >= 1 + 32 + 1) && ((goodAVX512 && opt < 0) || opt >= USE_OPT_AVX512))
+        proc_ST[i] = fluxST_avx512_uint16;
+      else
+#endif
       if ((actual_width >= 1 + 16 + 1) && (((env->GetCPUFlags() & CPUF_AVX2) == CPUF_AVX2 && opt < 0) || opt >= USE_OPT_AVX2))
-        proc_ST[i] = fluxST_avx2_uint16; // no speed gain
+        proc_ST[i] = fluxST_avx2_uint16;
       else if ((actual_width >= 1 + 8 + 1) && (((env->GetCPUFlags() & CPUF_SSE4_1) == CPUF_SSE4_1 && opt < 0) || opt >= USE_OPT_SSE41))
         proc_ST[i] = fluxST_sse41_uint16;
       else
@@ -168,6 +187,15 @@ FluxSmoothT::FluxSmoothT(PClip _child, int _temporal_threshold, bool _luma, bool
   for (int i = 2; i < 16; ++i)
     scaletab[i] = (int)(32768.0 / i + 0.5);
 
+  const bool goodAVX512 = ((env->GetCPUFlags() & CPUF_AVX512F) == CPUF_AVX512F) && (env->GetCPUFlags() & CPUF_AVX512BW) == CPUF_AVX512BW;
+
+#ifndef FLUXSMOOTH_AVX512_ENABLED
+  if (opt == USE_OPT_AVX512)
+    env->ThrowError("FluxSmoothT: cannot apply opt: this DLL version does not support AVX512");
+#endif
+
+  if (opt == USE_OPT_AVX512 && !goodAVX512)
+    env->ThrowError("FluxSmoothT: cannot apply opt: AVX512F and AVX512BW is needed");
   if (opt == USE_OPT_AVX2 && !(env->GetCPUFlags() & CPUF_AVX2))
     env->ThrowError("FluxSmoothT: cannot apply opt: AVX2 is not supported");
   if (opt == USE_OPT_SSE41 && !(env->GetCPUFlags() & CPUF_SSE4_1))
@@ -190,6 +218,11 @@ FluxSmoothT::FluxSmoothT(PClip _child, int _temporal_threshold, bool _luma, bool
     const int actual_width = vi.width >> vi.GetPlaneWidthSubsampling(current_planes[i]);
 
     if (bits_per_pixel == 8) {
+#ifdef FLUXSMOOTH_AVX512_ENABLED
+      if ((actual_width >= 64) && ((goodAVX512 && opt < 0) || opt >= USE_OPT_AVX512))
+        proc_T[i] = fluxT_avx512;
+      else
+#endif
       if ((actual_width >= 32) && (((env->GetCPUFlags() & CPUF_AVX2) == CPUF_AVX2 && opt < 0) || opt >= USE_OPT_AVX2))
         proc_T[i] = fluxT_avx2;
       else if ((actual_width >= 16) && (((env->GetCPUFlags() & CPUF_SSE4_1) == CPUF_SSE4_1 && opt < 0) || opt >= USE_OPT_SSE41))
@@ -200,6 +233,11 @@ FluxSmoothT::FluxSmoothT(PClip _child, int _temporal_threshold, bool _luma, bool
         proc_T[i] = fluxT_C<uint8_t>;
     }
     else {
+#ifdef FLUXSMOOTH_AVX512_ENABLED
+      if ((actual_width >= 32) && ((goodAVX512 && opt < 0) || opt >= USE_OPT_AVX512))
+        proc_T[i] = fluxT_avx512_uint16;
+      else
+#endif
       if ((actual_width >= 16) && (((env->GetCPUFlags() & CPUF_AVX2) == CPUF_AVX2 && opt < 0) || opt >= USE_OPT_AVX2))
         proc_T[i] = fluxT_avx2_uint16;
       else if ((actual_width >= 8) && (((env->GetCPUFlags() & CPUF_SSE4_1) == CPUF_SSE4_1 && opt < 0) || opt >= USE_OPT_SSE41))

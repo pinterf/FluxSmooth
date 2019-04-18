@@ -9,6 +9,19 @@
 #include <algorithm>
 
 /************************************
+// AVX512 enabler switch!!!
+************************************/
+#define FLUXSMOOTH_AVX512_ENABLED
+
+// disable AVX512 for MSVC, leave if for others like clang
+#if !defined(__clang__)
+// as of April 2019, MSVC version of immintrin.h does not contain proper AVX512BW support (VS2017 15.9)
+// clang (LLVM 8.0) is O.K.: c:\Program Files\LLVM\lib\clang\8.0.0\include
+// MSVC is not O.K.: c:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.16.27023\include
+#undef FLUXSMOOTH_AVX512_ENABLED
+#endif
+
+/************************************
 // Helpers, missing intrinsics
 ************************************/
 
@@ -67,7 +80,7 @@ __forceinline void check_neighbour_C(int neighbour, int center, int threshold, i
 ************************************/
 
 // Optimizations by 'opt' parameter
-enum { USE_OPT_C = 0, USE_OPT_SSE2 = 1, USE_OPT_SSE41 = 2, USE_OPT_AVX2 = 3 };
+enum { USE_OPT_C = 0, USE_OPT_SSE2 = 1, USE_OPT_SSE41 = 2, USE_OPT_AVX2 = 3, USE_OPT_AVX512 = 4};
 
 constexpr int planes_y[4] = { PLANAR_Y, PLANAR_U, PLANAR_V, PLANAR_A };
 constexpr int planes_r[4] = { PLANAR_G, PLANAR_B, PLANAR_R, PLANAR_A };
@@ -75,6 +88,13 @@ constexpr int planes_r[4] = { PLANAR_G, PLANAR_B, PLANAR_R, PLANAR_A };
 /************************************
 // Prototypes, Temporal
 ************************************/
+#ifdef FLUXSMOOTH_AVX512_ENABLED
+void fluxT_avx512_uint16(const uint8_t*, const int, const uint8_t * prevp, const int prv_pitch, const uint8_t * nextp, const int nxt_pitch,
+  uint8_t* destp, const int dst_pitch, const int width, const int height, int temporal_threshold, short *scaletab);
+
+void fluxT_avx512(const uint8_t*, const int, const uint8_t * prevp, const int prv_pitch, const uint8_t * nextp, const int nxt_pitch,
+  uint8_t* destp, const int dst_pitch, const int width, const int height, int temporal_threshold, short *scaletab);
+#endif
 
 void fluxT_avx2_uint16(const uint8_t*, const int, const uint8_t * prevp, const int prv_pitch, const uint8_t * nextp, const int nxt_pitch,
   uint8_t* destp, const int dst_pitch, const int width, const int height, int temporal_threshold, short *scaletab);
@@ -98,6 +118,13 @@ void fluxT_C(const uint8_t*, const int, const uint8_t * prevp, const int prv_pit
 /************************************
 // Prototypes, Spatial - Temporal
 ************************************/
+#ifdef FLUXSMOOTH_AVX512_ENABLED
+void fluxST_avx512_uint16(const uint8_t*, const int, const uint8_t * prevp, const int prv_pitch, const uint8_t * nextp, const int nxt_pitch,
+  uint8_t* destp, const int dst_pitch, const int width, const int height, int temporal_threshold, int spatial_threshold, short *scaletab);
+
+void fluxST_avx512(const uint8_t*, const int, const uint8_t * prevp, const int prv_pitch, const uint8_t * nextp, const int nxt_pitch,
+  uint8_t* destp, const int dst_pitch, const int width, const int height, int temporal_threshold, int spatial_threshold, short *scaletab);
+#endif
 
 void fluxST_avx2_uint16(const uint8_t*, const int, const uint8_t * prevp, const int prv_pitch, const uint8_t * nextp, const int nxt_pitch,
   uint8_t* destp, const int dst_pitch, const int width, const int height, int temporal_threshold, int spatial_threshold, short *scaletab);
