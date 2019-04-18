@@ -240,18 +240,18 @@ __forceinline void fluxT_core_avx2_uint16(const uint8_t * currp, const int src_p
   auto cnt_lo = _mm256_unpacklo_epi16(cnt, zero);
   auto cnt_hi = _mm256_unpackhi_epi16(cnt, zero);
   // Difference from SSE4.1 and C: floating point division
-  // SSE2: sum / count -> (int)((float)sum * 1.0f/(float)count + 0.5f)
+  // sum / count -> (int)((float)sum * 1.0f/(float)count + 0.5f)
   const auto rounder_half = _mm256_set1_ps(0.5f);
-  // lower 4 pixels
+  // lower 8 pixels
   auto fcnt_lo = _mm256_cvtepi32_ps(cnt_lo);
   auto fsum_lo = _mm256_cvtepi32_ps(sum_lo);
   auto mulres_lo = _mm256_cvttps_epi32(_mm256_add_ps(_mm256_mul_ps(fsum_lo, _mm256_rcp_ps(fcnt_lo)), rounder_half));
-  // upper 4 pixels
+  // upper 8 pixels
   auto fcnt_hi = _mm256_cvtepi32_ps(cnt_hi);
   auto fsum_hi = _mm256_cvtepi32_ps(sum_hi);
   auto mulres_hi = _mm256_cvttps_epi32(_mm256_add_ps(_mm256_mul_ps(fsum_hi, _mm256_rcp_ps(fcnt_hi)), rounder_half));
 
-  // move back to 8x16 bits
+  // move back to 16x16 bits
   auto result = _mm256_packus_epi32(mulres_lo, mulres_hi);
 
   // decide if original pixel is kept
@@ -488,18 +488,18 @@ __forceinline void fluxST_core_avx2_uint16(const uint8_t * currp, const int src_
   auto cnt_lo = _mm256_unpacklo_epi16(cnt, zero);
   auto cnt_hi = _mm256_unpackhi_epi16(cnt, zero);
   // Difference from SSE4.1 and C: floating point division
-  // SSE2: sum / count -> (int)((float)sum * 1.0f/(float)count + 0.5f)
+  // sum / count -> (int)((float)sum * 1.0f/(float)count + 0.5f)
   const auto rounder_half = _mm256_set1_ps(0.5f);
-  // lower 4 pixels
+  // lower 8 pixels
   auto fcnt_lo = _mm256_cvtepi32_ps(cnt_lo);
   auto fsum_lo = _mm256_cvtepi32_ps(sum_lo);
   auto mulres_lo = _mm256_cvttps_epi32(_mm256_add_ps(_mm256_mul_ps(fsum_lo, _mm256_rcp_ps(fcnt_lo)), rounder_half));
-  // upper 4 pixels
+  // upper 8 pixels
   auto fcnt_hi = _mm256_cvtepi32_ps(cnt_hi);
   auto fsum_hi = _mm256_cvtepi32_ps(sum_hi);
   auto mulres_hi = _mm256_cvttps_epi32(_mm256_add_ps(_mm256_mul_ps(fsum_hi, _mm256_rcp_ps(fcnt_hi)), rounder_half));
 
-  // move back to 8x16 bits
+  // move back to 16x16 bits
   auto result = _mm256_packus_epi32(mulres_lo, mulres_hi);
 
   // decide if original pixel is kept
