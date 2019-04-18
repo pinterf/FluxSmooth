@@ -10,7 +10,7 @@
 		<p><b>There is no copyright on this code, and there are no conditions on its 
 				distribution or use. Do with it what you will.</b></p>
 		<h3>Latest version:</h3>
-		<p>FluxSmooth v1.3 (20190402) <a href=" https://github.com/pinterf/FluxSmooth"> https://github.com/pinterf/FluxSmooth</a></p>
+		<p>FluxSmooth v1.4 (20190403) <a href=" https://github.com/pinterf/FluxSmooth"> https://github.com/pinterf/FluxSmooth</a></p>
 		<h2>Description</h2>
 		<p>One of the fundamental properties of noise is that it's random. One of the 
 			fundamental properties of motion is that it's not. This is the premise behind 
@@ -85,7 +85,7 @@
 				<td><i>opt</i></td>
 				<td>
 					<p>Debug parameter for directly choosing optimization</p>
-					<p>0=C, 1=SSE2, 2=SSE4.1, 3=AVX2, -1: automatic</p>
+					<p>0=C, 1=SSE2, 2=SSE4.1, 3=AVX2, 4=AVX512, -1: automatic</p>
 					<p>If set to -1, the fastest one is chosen automatically</p>
 				</td>
 				<td>-1</td>
@@ -109,6 +109,12 @@
 				<th>
 					Description</th>
 			</tr>
+			<TR>
+				<TD>1.4 (pinterf)<br />20190403</TD>
+                <TD>AVX512 support: when both AVX512F and AVX512BW extension are available (e.g. Skylake X and Cannon Lake).<br />
+                    Available processor flags can be shown through the .Info() filter in Avisynth+.<br />
+                    New value for 'opt': opt=4 means forced AVX512. Error message if system does not support those AVX512 flags.</TD>
+			</TR>
 			<TR>
 				<TD>1.3 (pinterf)<br />20190402</TD>
                 <TD>project moved to github: https://github.com/pinterf/FluxSmooth<br />
