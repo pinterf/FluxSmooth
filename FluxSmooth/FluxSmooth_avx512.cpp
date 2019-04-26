@@ -5,15 +5,21 @@
 
 #ifdef FLUXSMOOTH_AVX512_ENABLED
 
-#if !defined(__AVX512F__) || !defined(__AVX512BW__)
-#if defined(_MSC_VER)
-#error This source file will only work properly when compiled with AVX512F and AVX512BW option. Set /arch=AVX512 to command line options for this file.
-#elseif defined(__clang__)
-#error This source file will only work properly when compiled with AVX512F and AVX512BW option. Set -mavx512f -mavx512bw command line options for this file.
-#else
-#error Unsupported compiler. This source file will only work properly when compiled with AVX512F and AVX512BW option. Set ??? command line options for this file.
-#endif
 // BW: starting with Skylake X and Cannon Lake.
+#if defined(CLANG)
+#if !defined(__AVX512F__) || !defined(__AVX512BW__)
+#error This source file will only work properly when compiled with AVX512F and AVX512BW option. Set -mavx512f -mavx512bw command line options for this file.
+#endif
+#else
+#if defined(GCC)
+#if !defined(__AVX512F__) || !defined(__AVX512BW__)
+#error This source file will only work properly when compiled with AVX512F and AVX512BW option. Set -mavx512f -mavx512bw command line options for this file.
+#endif
+#else
+#if !defined(__AVX512BW__) // MSVC may not define __AVX512F__
+#error This source file will only work properly when compiled with AVX512 option. Set /arch=AVX512 to command line options for this file.
+#endif
+#endif
 #endif
 
 #if defined(_MSC_VER) && !defined(__clang__)
