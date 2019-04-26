@@ -77,7 +77,7 @@ __forceinline void check_neighbour_simd_uint16(__m128i &neighbour, __m128i &cent
 /************************************
 // Temporal only SSE2, 8 bit
 ************************************/
-__forceinline void fluxT_core_sse2(const uint8_t * currp, const int src_pitch, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
+__forceinline void fluxT_core_sse2(const uint8_t * currp, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
   __m128i &temporal_threshold_vector,
   __m128i &scaletab_lut_lsbs,
   __m128i &scaletab_lut_msbs
@@ -166,10 +166,10 @@ void fluxT_sse2(const uint8_t* currp, const int src_pitch, const uint8_t * prevp
   for (int y = 0; y < height; y++)
   {
     for (int x = 0; x < wmod16; x += 16)
-      fluxT_core_sse2(currp, src_pitch, prevp, nextp, destp, x, temporal_threshold_vector, scaletab_lut_lsbs, scaletab_lut_msbs);
+      fluxT_core_sse2(currp, prevp, nextp, destp, x, temporal_threshold_vector, scaletab_lut_lsbs, scaletab_lut_msbs);
     // do rest
     if (rest > 0)
-      fluxT_core_sse2(currp, src_pitch, prevp, nextp, destp, xcnt - 16, temporal_threshold_vector, scaletab_lut_lsbs, scaletab_lut_msbs);
+      fluxT_core_sse2(currp, prevp, nextp, destp, xcnt - 16, temporal_threshold_vector, scaletab_lut_lsbs, scaletab_lut_msbs);
 
     currp += src_pitch;
     prevp += prv_pitch;
@@ -184,7 +184,7 @@ void fluxT_sse2(const uint8_t* currp, const int src_pitch, const uint8_t * prevp
 #ifdef __clang__
 __attribute__((__target__("sse4.1")))
 #endif
-__forceinline void fluxT_core_sse41(const uint8_t * currp, const int src_pitch, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
+__forceinline void fluxT_core_sse41(const uint8_t * currp, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
   __m128i &temporal_threshold_vector,
   __m128i &scaletab_lut_lsbs,
   __m128i &scaletab_lut_msbs
@@ -286,10 +286,10 @@ void fluxT_sse41(const uint8_t* currp, const int src_pitch, const uint8_t * prev
   for (int y = 0; y < height; y++)
   {
     for (int x = 0; x < wmod16; x += 16)
-      fluxT_core_sse41(currp, src_pitch, prevp, nextp, destp, x, temporal_threshold_vector, scaletab_lut_lsbs, scaletab_lut_msbs);
+      fluxT_core_sse41(currp, prevp, nextp, destp, x, temporal_threshold_vector, scaletab_lut_lsbs, scaletab_lut_msbs);
     // do rest
     if (rest > 0)
-      fluxT_core_sse41(currp, src_pitch, prevp, nextp, destp, xcnt - 16, temporal_threshold_vector, scaletab_lut_lsbs, scaletab_lut_msbs);
+      fluxT_core_sse41(currp, prevp, nextp, destp, xcnt - 16, temporal_threshold_vector, scaletab_lut_lsbs, scaletab_lut_msbs);
 
     currp += src_pitch;
     prevp += prv_pitch;
@@ -304,7 +304,7 @@ void fluxT_sse41(const uint8_t* currp, const int src_pitch, const uint8_t * prev
 #ifdef __clang__
 __attribute__((__target__("sse4.1")))
 #endif
-__forceinline void fluxT_core_sse41_uint16(const uint8_t * currp, const int src_pitch, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
+__forceinline void fluxT_core_sse41_uint16(const uint8_t * currp, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
   __m128i &temporal_threshold_vector // already shifted to "signed" domain
 )
 {
@@ -381,10 +381,10 @@ void fluxT_sse41_uint16(const uint8_t* currp, const int src_pitch, const uint8_t
   for (int y = 0; y < height; y++)
   {
     for (int x = 0; x < wmod8; x += 8)
-      fluxT_core_sse41_uint16(currp, src_pitch, prevp, nextp, destp, x * sizeof(uint16_t), temporal_threshold_vector);
+      fluxT_core_sse41_uint16(currp, prevp, nextp, destp, x * sizeof(uint16_t), temporal_threshold_vector);
     // do rest
     if (rest > 0)
-      fluxT_core_sse41_uint16(currp, src_pitch, prevp, nextp, destp, (xcnt - 8) * sizeof(uint16_t), temporal_threshold_vector);
+      fluxT_core_sse41_uint16(currp, prevp, nextp, destp, (xcnt - 8) * sizeof(uint16_t), temporal_threshold_vector);
 
     currp += src_pitch;
     prevp += prv_pitch;
@@ -781,6 +781,19 @@ void fluxST_sse41_uint16(const uint8_t* currp, const int src_pitch, const uint8_
     nextp += nxt_pitch;
     destp += dst_pitch;
   } // for y
+}
+
+/************************************
+// Helper
+************************************/
+
+static __forceinline void check_neighbour_C(int neighbour, int center, int threshold, int& sum, int& cnt)
+{
+  if (std::abs(neighbour - center) <= threshold)
+  {
+    sum += neighbour;
+    ++cnt;
+  }
 }
 
 /************************************
