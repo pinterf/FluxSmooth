@@ -37,7 +37,7 @@ __forceinline __m256i _mm256_cmpge_epi16(__m256i x, __m256i y)
 // Helpers
 ************************************/
 
-__forceinline void check_neighbour_simd(__m256i &neighbour, __m256i &center, __m256i &threshold,
+static __forceinline void check_neighbour_simd(__m256i &neighbour, __m256i &center, __m256i &threshold,
   __m256i &sum_lo, __m256i &sum_hi, __m256i &cnt)
 {
   auto n_minus_c = _mm256_subs_epu8(neighbour, center);
@@ -64,7 +64,7 @@ __forceinline void check_neighbour_simd(__m256i &neighbour, __m256i &center, __m
   */
 }
 
-__forceinline void check_neighbour_simd_uint16(__m256i &neighbour, __m256i &center, __m256i &threshold,
+static __forceinline void check_neighbour_simd_uint16(__m256i &neighbour, __m256i &center, __m256i &threshold,
   __m256i &sum_lo, __m256i &sum_hi, __m256i &cnt, const __m256i &make_signed_word)
 {
   // threshold is shifted to the "signed" int16 domain
@@ -98,7 +98,7 @@ __forceinline void check_neighbour_simd_uint16(__m256i &neighbour, __m256i &cent
 // Temporal only AVX2, 8 bit
 ************************************/
 
-__forceinline void fluxT_core_avx2(const BYTE * currp, const long long src_pitch,
+static __forceinline void fluxT_core_avx2(const BYTE * currp,
   const BYTE * prevp, const BYTE * nextp,
   BYTE * destp, int x,
   __m256i &temporal_threshold_vector,
@@ -184,10 +184,10 @@ void fluxT_avx2(const uint8_t* currp, const int src_pitch,
   for (int y = 0; y < height; y++)
   {
     for (int x = 0; x < wmod32; x += 32)
-      fluxT_core_avx2(currp, src_pitch, prevp, nextp, destp, x, temporal_threshold_vector, scaletab_lut_lsbs, scaletab_lut_msbs);
+      fluxT_core_avx2(currp, prevp, nextp, destp, x, temporal_threshold_vector, scaletab_lut_lsbs, scaletab_lut_msbs);
     // do rest
     if (rest > 0)
-      fluxT_core_avx2(currp, src_pitch, prevp, nextp, destp, xcnt - 32, temporal_threshold_vector, scaletab_lut_lsbs, scaletab_lut_msbs);
+      fluxT_core_avx2(currp, prevp, nextp, destp, xcnt - 32, temporal_threshold_vector, scaletab_lut_lsbs, scaletab_lut_msbs);
 
     currp += src_pitch;
     prevp += prv_pitch;
@@ -201,7 +201,7 @@ void fluxT_avx2(const uint8_t* currp, const int src_pitch,
 // Temporal only AVX2, 16 bit
 ************************************/
 
-__forceinline void fluxT_core_avx2_uint16(const uint8_t * currp, const int src_pitch, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
+__forceinline void fluxT_core_avx2_uint16(const uint8_t * currp, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
   __m256i &temporal_threshold_vector // already shifted to "signed" domain
 )
 {
@@ -245,11 +245,12 @@ __forceinline void fluxT_core_avx2_uint16(const uint8_t * currp, const int src_p
   // lower 8 pixels
   auto fcnt_lo = _mm256_cvtepi32_ps(cnt_lo);
   auto fsum_lo = _mm256_cvtepi32_ps(sum_lo);
-  auto mulres_lo = _mm256_cvttps_epi32(_mm256_add_ps(_mm256_mul_ps(fsum_lo, _mm256_rcp_ps(fcnt_lo)), rounder_half));
+  // difference from AVX512: rcp14_ps has error less than 2^-14, while rcp_ps error is < 1.5*2^-12
+  auto mulres_lo = _mm256_cvttps_epi32(_mm256_fmadd_ps(fsum_lo, _mm256_rcp_ps(fcnt_lo), rounder_half));
   // upper 8 pixels
   auto fcnt_hi = _mm256_cvtepi32_ps(cnt_hi);
   auto fsum_hi = _mm256_cvtepi32_ps(sum_hi);
-  auto mulres_hi = _mm256_cvttps_epi32(_mm256_add_ps(_mm256_mul_ps(fsum_hi, _mm256_rcp_ps(fcnt_hi)), rounder_half));
+  auto mulres_hi = _mm256_cvttps_epi32(_mm256_fmadd_ps(fsum_hi, _mm256_rcp_ps(fcnt_hi), rounder_half));
 
   // move back to 16x16 bits
   auto result = _mm256_packus_epi32(mulres_lo, mulres_hi);
@@ -279,10 +280,10 @@ void fluxT_avx2_uint16(const uint8_t* currp, const int src_pitch,
   for (int y = 0; y < height; y++)
   {
     for (int x = 0; x < wmod16; x += 16)
-      fluxT_core_avx2_uint16(currp, src_pitch, prevp, nextp, destp, x * sizeof(uint16_t), temporal_threshold_vector);
+      fluxT_core_avx2_uint16(currp, prevp, nextp, destp, x * sizeof(uint16_t), temporal_threshold_vector);
     // do rest
     if (rest > 0)
-      fluxT_core_avx2_uint16(currp, src_pitch, prevp, nextp, destp, (xcnt - 16) * sizeof(uint16_t), temporal_threshold_vector);
+      fluxT_core_avx2_uint16(currp, prevp, nextp, destp, (xcnt - 16) * sizeof(uint16_t), temporal_threshold_vector);
 
     currp += src_pitch;
     prevp += prv_pitch;
@@ -296,7 +297,7 @@ void fluxT_avx2_uint16(const uint8_t* currp, const int src_pitch,
 // Spatial Temporal AVX2, 8 bit
 ************************************/
 
-__forceinline void fluxST_core_avx2(const BYTE * currp, const long long src_pitch,
+__forceinline void fluxST_core_avx2(const BYTE * currp, const int src_pitch,
   const BYTE * prevp, const BYTE * nextp,
   BYTE * destp, int x,
   __m256i &temporal_threshold_vector,
@@ -493,11 +494,12 @@ __forceinline void fluxST_core_avx2_uint16(const uint8_t * currp, const int src_
   // lower 8 pixels
   auto fcnt_lo = _mm256_cvtepi32_ps(cnt_lo);
   auto fsum_lo = _mm256_cvtepi32_ps(sum_lo);
-  auto mulres_lo = _mm256_cvttps_epi32(_mm256_add_ps(_mm256_mul_ps(fsum_lo, _mm256_rcp_ps(fcnt_lo)), rounder_half));
+  // difference from AVX512: rcp14_ps has error less than 2^-14, while rcp_ps error is < 1.5*2^-12
+  auto mulres_lo = _mm256_cvttps_epi32(_mm256_fmadd_ps(fsum_lo, _mm256_rcp_ps(fcnt_lo), rounder_half));
   // upper 8 pixels
   auto fcnt_hi = _mm256_cvtepi32_ps(cnt_hi);
   auto fsum_hi = _mm256_cvtepi32_ps(sum_hi);
-  auto mulres_hi = _mm256_cvttps_epi32(_mm256_add_ps(_mm256_mul_ps(fsum_hi, _mm256_rcp_ps(fcnt_hi)), rounder_half));
+  auto mulres_hi = _mm256_cvttps_epi32(_mm256_fmadd_ps(fsum_hi, _mm256_rcp_ps(fcnt_hi), rounder_half));
 
   // move back to 16x16 bits
   auto result = _mm256_packus_epi32(mulres_lo, mulres_hi);
