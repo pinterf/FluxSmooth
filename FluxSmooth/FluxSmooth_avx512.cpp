@@ -3,15 +3,12 @@
 #include "stdint.h"
 #include "immintrin.h" // also includes "zmmintrin.h" for AVX512 and "avx512bwintrin.h"
 
-// As Microsoft VS does not support necessary AVX512BW header files, it is disabled for it on FluxSmooth.h
-
 #ifdef FLUXSMOOTH_AVX512_ENABLED
 
 #if !defined(__AVX512F__) || !defined(__AVX512BW__)
 #if defined(_MSC_VER)
 #error This source file will only work properly when compiled with AVX512F and AVX512BW option. Set /arch=AVX512 to command line options for this file.
 #elseif defined(__clang__)
-// e.g. __clang__, check for intel probably
 #error This source file will only work properly when compiled with AVX512F and AVX512BW option. Set -mavx512f -mavx512bw command line options for this file.
 #else
 #error Unsupported compiler. This source file will only work properly when compiled with AVX512F and AVX512BW option. Set ??? command line options for this file.
@@ -19,17 +16,38 @@
 // BW: starting with Skylake X and Cannon Lake.
 #endif
 
-#if defined(_MSC_VER)
-// as of April 2019, MS version of immintrin.h does not contain proper AVX512BW support
-// clang (LLVM) is O.K.: c:\Program Files\LLVM\lib\clang\8.0.0\include
-// MS is not O.K.: c:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.16.27023\include
+#if defined(_MSC_VER) && !defined(__clang__)
+// As of April 2019, MS version of immintrin.h does not support AVX512BW _k*_mask* functions
+// https://developercommunity.visualstudio.com/content/problem/518298/missing-avx512bw-mask-intrinsics.html
+
+__forceinline __mmask64 _kand_mask64(__mmask64 A, __mmask64 B) // AVX512BW
+{
+  return (__mmask64)(A & B);
+}
+
+__forceinline __mmask64 _kor_mask64(__mmask64 A, __mmask64 B) // AVX512BW
+{
+  return (__mmask64)(A | B);
+}
+
+__forceinline __mmask32 _kand_mask32(__mmask32 A, __mmask32 B) // AVX512BW
+{
+  return (__mmask32)(A & B);
+}
+
+__forceinline __mmask32 _kor_mask32(__mmask32 A, __mmask32 B) // AVX512BW
+{
+  return (__mmask32)(A | B);
+}
+
 #endif
+
 
 /************************************
 // Helpers
 ************************************/
 
-__forceinline void check_neighbour_simd(__m512i &neighbour, __m512i &center, __m512i &threshold,
+static __forceinline void check_neighbour_simd(__m512i &neighbour, __m512i &center, __m512i &threshold,
   __m512i &sum_lo, __m512i &sum_hi, __m512i &cnt)
 {
   auto n_minus_c = _mm512_subs_epu8(neighbour, center); // AVX512BW
@@ -56,7 +74,7 @@ __forceinline void check_neighbour_simd(__m512i &neighbour, __m512i &center, __m
   */
 }
 
-__forceinline void check_neighbour_simd_uint16(__m512i &neighbour, __m512i &center, __m512i &threshold,
+static __forceinline void check_neighbour_simd_uint16(__m512i &neighbour, __m512i &center, __m512i &threshold,
   __m512i &sum_lo, __m512i &sum_hi, __m512i &cnt)
 {
   auto n_minus_c = _mm512_subs_epu16(neighbour, center);
@@ -88,9 +106,9 @@ __forceinline void check_neighbour_simd_uint16(__m512i &neighbour, __m512i &cent
 // Temporal only AVX512, 8 bit
 ************************************/
 
-__forceinline void fluxT_core_avx512(const BYTE * currp, const long long src_pitch,
+static __forceinline void fluxT_core_avx512(const BYTE * currp, 
   const BYTE * prevp, const BYTE * nextp,
-  BYTE * destp, int x,
+  BYTE * destp, int x,  
   __m512i &temporal_threshold_vector,
   __m512i &scaletab_lut_lsbs,
   __m512i &scaletab_lut_msbs
@@ -180,10 +198,10 @@ void fluxT_avx512(const uint8_t* currp, const int src_pitch,
   for (int y = 0; y < height; y++)
   {
     for (int x = 0; x < wmod64; x += 64)
-      fluxT_core_avx512(currp, src_pitch, prevp, nextp, destp, x, temporal_threshold_vector, scaletab_lut_lsbs, scaletab_lut_msbs);
+      fluxT_core_avx512(currp, prevp, nextp, destp, x, temporal_threshold_vector, scaletab_lut_lsbs, scaletab_lut_msbs);
     // do rest
     if (rest > 0)
-      fluxT_core_avx512(currp, src_pitch, prevp, nextp, destp, xcnt - 64, temporal_threshold_vector, scaletab_lut_lsbs, scaletab_lut_msbs);
+      fluxT_core_avx512(currp, prevp, nextp, destp, xcnt - 64, temporal_threshold_vector, scaletab_lut_lsbs, scaletab_lut_msbs);
 
     currp += src_pitch;
     prevp += prv_pitch;
@@ -197,7 +215,7 @@ void fluxT_avx512(const uint8_t* currp, const int src_pitch,
 // Temporal only AVX512, 16 bit
 ************************************/
 
-__forceinline void fluxT_core_avx512_uint16(const uint8_t * currp, const int src_pitch, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
+__forceinline void fluxT_core_avx512_uint16(const uint8_t * currp, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
   __m512i &temporal_threshold_vector
 )
 {
@@ -232,15 +250,16 @@ __forceinline void fluxT_core_avx512_uint16(const uint8_t * currp, const int src
   auto cnt_hi = _mm512_unpackhi_epi16(cnt, zero);
   // Difference from SSE4.1 and C: floating point division
   // sum / count -> (int)((float)sum * 1.0f/(float)count + 0.5f)
+  const auto rounder_half = _mm512_set1_ps(0.5f);
   // lower 16 pixels
   auto fcnt_lo = _mm512_cvtepi32_ps(cnt_lo);
   auto fsum_lo = _mm512_cvtepi32_ps(sum_lo);
-  // _mm512_recip_ps (__m512 a) another reciprocal
-  auto mulres_lo = _mm512_cvt_roundps_epi32(_mm512_mul_ps(fsum_lo, _mm512_rcp14_ps(fcnt_lo)), (_MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC));
+  // difference from AVX2 or less: rcp14_ps has error less than 2^-14, while rcp_ps error is < 1.5*2^-12
+  auto mulres_lo = _mm512_cvttps_epi32(_mm512_fmadd_ps(fsum_lo, _mm512_rcp14_ps(fcnt_lo), rounder_half));
   // upper 16 pixels
   auto fcnt_hi = _mm512_cvtepi32_ps(cnt_hi);
   auto fsum_hi = _mm512_cvtepi32_ps(sum_hi);
-  auto mulres_hi = _mm512_cvt_roundps_epi32(_mm512_mul_ps(fsum_hi, _mm512_rcp14_ps(fcnt_hi)), (_MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC));
+  auto mulres_hi = _mm512_cvttps_epi32(_mm512_fmadd_ps(fsum_hi, _mm512_rcp14_ps(fcnt_hi), rounder_half));
 
   // move back to 32x16 bits
   auto result = _mm512_packus_epi32(mulres_lo, mulres_hi);
@@ -270,10 +289,10 @@ void fluxT_avx512_uint16(const uint8_t* currp, const int src_pitch,
   for (int y = 0; y < height; y++)
   {
     for (int x = 0; x < wmod32; x += 32)
-      fluxT_core_avx512_uint16(currp, src_pitch, prevp, nextp, destp, x * sizeof(uint16_t), temporal_threshold_vector);
+      fluxT_core_avx512_uint16(currp, prevp, nextp, destp, x * sizeof(uint16_t), temporal_threshold_vector);
     // do rest
     if (rest > 0)
-      fluxT_core_avx512_uint16(currp, src_pitch, prevp, nextp, destp, (xcnt - 32) * sizeof(uint16_t), temporal_threshold_vector);
+      fluxT_core_avx512_uint16(currp, prevp, nextp, destp, (xcnt - 32) * sizeof(uint16_t), temporal_threshold_vector);
 
     currp += src_pitch;
     prevp += prv_pitch;
@@ -287,7 +306,7 @@ void fluxT_avx512_uint16(const uint8_t* currp, const int src_pitch,
 // Spatial Temporal AVX2, 8 bit
 ************************************/
 
-__forceinline void fluxST_core_avx512(const BYTE * currp, const long long src_pitch,
+__forceinline void fluxST_core_avx512(const BYTE * currp, const int src_pitch,
   const BYTE * prevp, const BYTE * nextp,
   BYTE * destp, int x,
   __m512i &temporal_threshold_vector,
@@ -482,14 +501,16 @@ __forceinline void fluxST_core_avx512_uint16(const uint8_t * currp, const int sr
   auto cnt_hi = _mm512_unpackhi_epi16(cnt, zero);
   // Difference from SSE4.1 and C: floating point division
   // sum / count -> (int)((float)sum * 1.0f/(float)count + 0.5f)
+  const auto rounder_half = _mm512_set1_ps(0.5f);
   // lower 16 pixels
   auto fcnt_lo = _mm512_cvtepi32_ps(cnt_lo);
   auto fsum_lo = _mm512_cvtepi32_ps(sum_lo);
-  auto mulres_lo = _mm512_cvt_roundps_epi32(_mm512_mul_ps(fsum_lo, _mm512_rcp14_ps(fcnt_lo)), (_MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC));
+  // difference from AVX2 or less: rcp14_ps has error less than 2^-14, while rcp_ps error is < 1.5*2^-12
+  auto mulres_lo = _mm512_cvttps_epi32(_mm512_fmadd_ps(fsum_lo, _mm512_rcp14_ps(fcnt_lo), rounder_half));
   // upper 16 pixels
   auto fcnt_hi = _mm512_cvtepi32_ps(cnt_hi);
   auto fsum_hi = _mm512_cvtepi32_ps(sum_hi);
-  auto mulres_hi = _mm512_cvt_roundps_epi32(_mm512_mul_ps(fsum_hi, _mm512_rcp14_ps(fcnt_hi)), (_MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC));
+  auto mulres_hi = _mm512_cvttps_epi32(_mm512_fmadd_ps(fsum_hi, _mm512_rcp14_ps(fcnt_hi), rounder_half));
 
   // move back to 32x16 bits
   auto result = _mm512_packus_epi32(mulres_lo, mulres_hi);

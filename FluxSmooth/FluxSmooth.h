@@ -13,12 +13,12 @@
 ************************************/
 #define FLUXSMOOTH_AVX512_ENABLED
 
-// disable AVX512 for MSVC, leave if for others like clang
-#if !defined(__clang__)
-// as of April 2019, MSVC version of immintrin.h does not contain proper AVX512BW support (VS2017 15.9)
-// clang (LLVM 8.0) is O.K.: c:\Program Files\LLVM\lib\clang\8.0.0\include
-// MSVC is not O.K.: c:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.16.27023\include
-#undef FLUXSMOOTH_AVX512_ENABLED
+#if defined(_MSC_VER) && !defined(__clang__)
+// Some missing avx512 mask intrinsics are handmade for Microsoft (for 19.20)
+// As of April 2019, MS version of ??intrin.h does not support AVX512BW _k*_mask* functions
+// https://developercommunity.visualstudio.com/content/problem/518298/missing-avx512bw-mask-intrinsics.html
+// uncomment if AVX512 is really not needed
+// #undef FLUXSMOOTH_AVX512_ENABLED
 #endif
 
 /************************************
@@ -26,12 +26,12 @@
 ************************************/
 
 // SSE4.1 simulation for SSE2
-__forceinline __m128i _MM_BLENDV_EPI8(__m128i const &a, __m128i const &b, __m128i const &selector) {
+static __forceinline __m128i _MM_BLENDV_EPI8(__m128i const &a, __m128i const &b, __m128i const &selector) {
   return _mm_or_si128(_mm_and_si128(selector, b), _mm_andnot_si128(selector, a));
 }
 
 // non-existant simd
-__forceinline __m128i _MM_CMPLE_EPU16(__m128i x, __m128i y)
+static __forceinline __m128i _MM_CMPLE_EPU16(__m128i x, __m128i y)
 {
   // Returns 0xFFFF where x <= y:
   return _mm_cmpeq_epi16(_mm_subs_epu16(x, y), _mm_setzero_si128());
@@ -43,7 +43,7 @@ __forceinline __m128i _MM_CMPLE_EPU16(__m128i x, __m128i y)
 #define _mm_cmple_epu8(a, b) _mm_cmpge_epu8(b, a)
 
 // non-existant simd
-__forceinline __m128i _mm_cmpgt_epu8(__m128i x, __m128i y)
+static __forceinline __m128i _mm_cmpgt_epu8(__m128i x, __m128i y)
 {
   // Returns 0xFF where x > y:
   return _mm_andnot_si128(
@@ -54,26 +54,13 @@ __forceinline __m128i _mm_cmpgt_epu8(__m128i x, __m128i y)
 
 #define _mm_cmplt_epu8(a, b) _mm_cmpgt_epu8(b, a)
 
-__forceinline __m128i _mm_cmpge_epi16(__m128i x, __m128i y)
+static __forceinline __m128i _mm_cmpge_epi16(__m128i x, __m128i y)
 {
   // Returns 0xFFFF where x >= y:
   return _mm_or_si128(_mm_cmpeq_epi16(x, y), _mm_cmpgt_epi16(x, y));
 }
 
 #define _mm_cmple_epi16(a, b) _mm_cmpge_epi16(b, a)
-
-/************************************
-// Helper
-************************************/
-
-__forceinline void check_neighbour_C(int neighbour, int center, int threshold, int &sum, int &cnt)
-{
-  if (std::abs(neighbour - center) <= threshold)
-  {
-    sum += neighbour;
-    ++cnt;
-  }
-}
 
 /************************************
 // other constants
