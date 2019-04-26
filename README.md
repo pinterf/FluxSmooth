@@ -7,11 +7,13 @@ There is no copyright on this code, and there are no conditions
 on its distribution or use. Do with it what you will.
 
 ## Changelog
-- (20190403) v1.4
-  - AVX512 support in main (clang) builds: 
+- (20190426) v1.4
+  - AVX512 support 
     when both AVX512F and AVX512BW extensions are available (e.g. Skylake X and Cannon Lake).
     Available processor flags can be shown through the .Info() filter in Avisynth+.
     New value for 'opt': opt=4 means forced AVX512. Error message if system does not support those AVX512 flags.
+  - Moved to Visual Studio 2019
+  - (xp builds: Microsoft C++, main builds: LLVM clang)
 
 - (20190402) v1.3, rewrite by pinterf
   - project moved to github: https://github.com/pinterf/FluxSmooth
