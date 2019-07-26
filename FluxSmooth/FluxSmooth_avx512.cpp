@@ -25,6 +25,12 @@
 #if defined(_MSC_VER) && !defined(__clang__)
 // As of April 2019, MS version of immintrin.h does not support AVX512BW _k*_mask* functions
 // https://developercommunity.visualstudio.com/content/problem/518298/missing-avx512bw-mask-intrinsics.html
+// Fixed in July 2019, available from VS 2019 16.2
+// Note: Avaliable only for v142 platform toolset from 14.22
+//       v141 and v141_xp using 14.16; _MSC_VER is 1916 (e.g. Visual Studio 2017 version 15.9.11)
+//       v142 using 14.22 is already implementing those mask operations --> 2019 16.2
+
+#if _MSC_VER < 1922
 
 __forceinline __mmask64 _kand_mask64(__mmask64 A, __mmask64 B) // AVX512BW
 {
@@ -45,7 +51,7 @@ __forceinline __mmask32 _kor_mask32(__mmask32 A, __mmask32 B) // AVX512BW
 {
   return (__mmask32)(A | B);
 }
-
+#endif
 #endif
 
 
