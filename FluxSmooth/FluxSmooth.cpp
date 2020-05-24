@@ -17,7 +17,11 @@
 // Helpers
 ************************************/
 
-__forceinline void check_neighbour_simd(__m128i &neighbour, __m128i &center, __m128i &threshold,
+#ifdef INTEL_INTRINSICS
+#if defined(CLANG) || defined(GCC)
+__attribute__((__target__("sse4.1")))
+#endif
+AVS_FORCEINLINE void check_neighbour_simd(__m128i &neighbour, __m128i &center, __m128i &threshold,
   __m128i &sum_lo, __m128i &sum_hi, __m128i &cnt)
 {
   auto n_minus_c = _mm_subs_epu8(neighbour, center);
@@ -44,7 +48,10 @@ __forceinline void check_neighbour_simd(__m128i &neighbour, __m128i &center, __m
   */
 }
 
-__forceinline void check_neighbour_simd_uint16(__m128i &neighbour, __m128i &center, __m128i &threshold,
+#if defined(CLANG) || defined(GCC)
+__attribute__((__target__("sse4.1")))
+#endif
+AVS_FORCEINLINE void check_neighbour_simd_uint16(__m128i &neighbour, __m128i &center, __m128i &threshold,
   __m128i &sum_lo, __m128i &sum_hi, __m128i &cnt, const __m128i &make_signed_word)
 {
   // threshold is shifted to the "signed" int16 domain
@@ -77,7 +84,7 @@ __forceinline void check_neighbour_simd_uint16(__m128i &neighbour, __m128i &cent
 /************************************
 // Temporal only SSE2, 8 bit
 ************************************/
-__forceinline void fluxT_core_sse2(const uint8_t * currp, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
+AVS_FORCEINLINE void fluxT_core_sse2(const uint8_t * currp, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
   __m128i &temporal_threshold_vector,
   __m128i &scaletab_lut_lsbs,
   __m128i &scaletab_lut_msbs
@@ -181,10 +188,10 @@ void fluxT_sse2(const uint8_t* currp, const int src_pitch, const uint8_t * prevp
 /************************************
 // Temporal only SSE4.1, 8 bit
 ************************************/
-#ifdef __clang__
+#if defined(CLANG) || defined(GCC)
 __attribute__((__target__("sse4.1")))
 #endif
-__forceinline void fluxT_core_sse41(const uint8_t * currp, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
+AVS_FORCEINLINE void fluxT_core_sse41(const uint8_t * currp, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
   __m128i &temporal_threshold_vector,
   __m128i &scaletab_lut_lsbs,
   __m128i &scaletab_lut_msbs
@@ -263,7 +270,7 @@ __forceinline void fluxT_core_sse41(const uint8_t * currp, const uint8_t* prevp,
 }
 
 // Temporal only
-#ifdef __clang__
+#if defined(CLANG) || defined(GCC)
 __attribute__((__target__("sse4.1")))
 #endif
 void fluxT_sse41(const uint8_t* currp, const int src_pitch, const uint8_t * prevp, const int prv_pitch, const uint8_t * nextp, const int nxt_pitch,
@@ -301,10 +308,10 @@ void fluxT_sse41(const uint8_t* currp, const int src_pitch, const uint8_t * prev
 /************************************
 // Temporal only SSE4.1, 16 bit
 ************************************/
-#ifdef __clang__
+#if defined(CLANG) || defined(GCC)
 __attribute__((__target__("sse4.1")))
 #endif
-__forceinline void fluxT_core_sse41_uint16(const uint8_t * currp, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
+AVS_FORCEINLINE void fluxT_core_sse41_uint16(const uint8_t * currp, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
   __m128i &temporal_threshold_vector // already shifted to "signed" domain
 )
 {
@@ -364,7 +371,7 @@ __forceinline void fluxT_core_sse41_uint16(const uint8_t * currp, const uint8_t*
 }
 
 // Temporal only
-#ifdef __clang__
+#if defined(CLANG) || defined(GCC)
 __attribute__((__target__("sse4.1")))
 #endif
 void fluxT_sse41_uint16(const uint8_t* currp, const int src_pitch, const uint8_t * prevp, const int prv_pitch, const uint8_t * nextp, const int nxt_pitch,
@@ -396,7 +403,7 @@ void fluxT_sse41_uint16(const uint8_t* currp, const int src_pitch, const uint8_t
 /************************************
 // Spatial Temporal SSE2, 8 bit
 ************************************/
-__forceinline void fluxST_core_sse2(const uint8_t * currp, const int src_pitch, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
+AVS_FORCEINLINE void fluxST_core_sse2(const uint8_t * currp, const int src_pitch, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
   __m128i &temporal_threshold_vector,
   __m128i &spatial_threshold_vector,
   __m128i &scaletab_lut_lsbs,
@@ -532,10 +539,10 @@ void fluxST_sse2(const uint8_t* currp, const int src_pitch, const uint8_t * prev
 /************************************
 // Spatial Temporal SSE4.1, 8 bit
 ************************************/
-#ifdef __clang__
+#if defined(CLANG) || defined(GCC)
 __attribute__((__target__("sse4.1")))
 #endif
-__forceinline void fluxST_core_sse41(const uint8_t * currp, const int src_pitch, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
+AVS_FORCEINLINE void fluxST_core_sse41(const uint8_t * currp, const int src_pitch, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
   __m128i &temporal_threshold_vector,
   __m128i &spatial_threshold_vector,
   __m128i &scaletab_lut_lsbs,
@@ -616,7 +623,7 @@ __forceinline void fluxST_core_sse41(const uint8_t * currp, const int src_pitch,
 }
 
 // Spatial Temporal
-#ifdef __clang__
+#if defined(CLANG) || defined(GCC)
 __attribute__((__target__("sse4.1")))
 #endif
 void fluxST_sse41(const uint8_t* currp, const int src_pitch, const uint8_t * prevp, const int prv_pitch, const uint8_t * nextp, const int nxt_pitch,
@@ -661,10 +668,10 @@ void fluxST_sse41(const uint8_t* currp, const int src_pitch, const uint8_t * pre
 /************************************
 // Spatial Temporal SSE4.1, 16 bit
 ************************************/
-#ifdef __clang__
+#if defined(CLANG) || defined(GCC)
 __attribute__((__target__("sse4.1")))
 #endif
-__forceinline void fluxST_core_sse41_uint16(const uint8_t * currp, const int src_pitch, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
+AVS_FORCEINLINE void fluxST_core_sse41_uint16(const uint8_t * currp, const int src_pitch, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
   __m128i &temporal_threshold_vector, // already shifted to "signed" domain
   __m128i &spatial_threshold_vector // already shifted to "signed" domain
 )
@@ -748,7 +755,7 @@ __forceinline void fluxST_core_sse41_uint16(const uint8_t * currp, const int src
 }
 
 // Spatial Temporal
-#ifdef __clang__
+#if defined(CLANG) || defined(GCC)
 __attribute__((__target__("sse4.1")))
 #endif
 void fluxST_sse41_uint16(const uint8_t* currp, const int src_pitch, const uint8_t * prevp, const int prv_pitch, const uint8_t * nextp, const int nxt_pitch,
@@ -782,12 +789,13 @@ void fluxST_sse41_uint16(const uint8_t* currp, const int src_pitch, const uint8_
     destp += dst_pitch;
   } // for y
 }
+#endif // INTEL_INTRINSICS
 
 /************************************
 // Helper
 ************************************/
 
-static __forceinline void check_neighbour_C(int neighbour, int center, int threshold, int& sum, int& cnt)
+static AVS_FORCEINLINE void check_neighbour_C(int neighbour, int center, int threshold, int& sum, int& cnt)
 {
   if (std::abs(neighbour - center) <= threshold)
   {

@@ -16,7 +16,7 @@
 #define _mm256_cmple_epu8(a, b) _mm256_cmpge_epu8(b, a)
 
 // does not exist
-static __forceinline __m256i _mm256_cmpgt_epu8(__m256i x, __m256i y)
+static AVS_FORCEINLINE __m256i _mm256_cmpgt_epu8(__m256i x, __m256i y)
 {
   // Returns 0xFF where x > y:
   return _mm256_andnot_si256(
@@ -25,7 +25,7 @@ static __forceinline __m256i _mm256_cmpgt_epu8(__m256i x, __m256i y)
   );
 }
 
-__forceinline __m256i _mm256_cmpge_epi16(__m256i x, __m256i y)
+AVS_FORCEINLINE __m256i _mm256_cmpge_epi16(__m256i x, __m256i y)
 {
   // Returns 0xFFFF where x >= y:
   return _mm256_or_si256(_mm256_cmpeq_epi16(x, y), _mm256_cmpgt_epi16(x, y));
@@ -37,7 +37,7 @@ __forceinline __m256i _mm256_cmpge_epi16(__m256i x, __m256i y)
 // Helpers
 ************************************/
 
-static __forceinline void check_neighbour_simd(__m256i &neighbour, __m256i &center, __m256i &threshold,
+static AVS_FORCEINLINE void check_neighbour_simd(__m256i &neighbour, __m256i &center, __m256i &threshold,
   __m256i &sum_lo, __m256i &sum_hi, __m256i &cnt)
 {
   auto n_minus_c = _mm256_subs_epu8(neighbour, center);
@@ -64,7 +64,7 @@ static __forceinline void check_neighbour_simd(__m256i &neighbour, __m256i &cent
   */
 }
 
-static __forceinline void check_neighbour_simd_uint16(__m256i &neighbour, __m256i &center, __m256i &threshold,
+static AVS_FORCEINLINE void check_neighbour_simd_uint16(__m256i &neighbour, __m256i &center, __m256i &threshold,
   __m256i &sum_lo, __m256i &sum_hi, __m256i &cnt, const __m256i &make_signed_word)
 {
   // threshold is shifted to the "signed" int16 domain
@@ -98,7 +98,7 @@ static __forceinline void check_neighbour_simd_uint16(__m256i &neighbour, __m256
 // Temporal only AVX2, 8 bit
 ************************************/
 
-static __forceinline void fluxT_core_avx2(const BYTE * currp,
+static AVS_FORCEINLINE void fluxT_core_avx2(const BYTE * currp,
   const BYTE * prevp, const BYTE * nextp,
   BYTE * destp, int x,
   __m256i &temporal_threshold_vector,
@@ -201,7 +201,7 @@ void fluxT_avx2(const uint8_t* currp, const int src_pitch,
 // Temporal only AVX2, 16 bit
 ************************************/
 
-__forceinline void fluxT_core_avx2_uint16(const uint8_t * currp, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
+AVS_FORCEINLINE void fluxT_core_avx2_uint16(const uint8_t * currp, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
   __m256i &temporal_threshold_vector // already shifted to "signed" domain
 )
 {
@@ -297,7 +297,7 @@ void fluxT_avx2_uint16(const uint8_t* currp, const int src_pitch,
 // Spatial Temporal AVX2, 8 bit
 ************************************/
 
-__forceinline void fluxST_core_avx2(const BYTE * currp, const int src_pitch,
+AVS_FORCEINLINE void fluxST_core_avx2(const BYTE * currp, const int src_pitch,
   const BYTE * prevp, const BYTE * nextp,
   BYTE * destp, int x,
   __m256i &temporal_threshold_vector,
@@ -426,7 +426,7 @@ void fluxST_avx2(const uint8_t* currp, const int src_pitch, const uint8_t * prev
 /************************************
 // Spatial Temporal AVX2, 16 bit
 ************************************/
-__forceinline void fluxST_core_avx2_uint16(const uint8_t * currp, const int src_pitch, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
+AVS_FORCEINLINE void fluxST_core_avx2_uint16(const uint8_t * currp, const int src_pitch, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
   __m256i &temporal_threshold_vector, // already shifted to "signed" domain
   __m256i &spatial_threshold_vector // already shifted to "signed" domain
 )

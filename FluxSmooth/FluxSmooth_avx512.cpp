@@ -32,22 +32,22 @@
 
 #if _MSC_VER < 1922
 
-__forceinline __mmask64 _kand_mask64(__mmask64 A, __mmask64 B) // AVX512BW
+AVS_FORCEINLINE __mmask64 _kand_mask64(__mmask64 A, __mmask64 B) // AVX512BW
 {
   return (__mmask64)(A & B);
 }
 
-__forceinline __mmask64 _kor_mask64(__mmask64 A, __mmask64 B) // AVX512BW
+AVS_FORCEINLINE __mmask64 _kor_mask64(__mmask64 A, __mmask64 B) // AVX512BW
 {
   return (__mmask64)(A | B);
 }
 
-__forceinline __mmask32 _kand_mask32(__mmask32 A, __mmask32 B) // AVX512BW
+AVS_FORCEINLINE __mmask32 _kand_mask32(__mmask32 A, __mmask32 B) // AVX512BW
 {
   return (__mmask32)(A & B);
 }
 
-__forceinline __mmask32 _kor_mask32(__mmask32 A, __mmask32 B) // AVX512BW
+AVS_FORCEINLINE __mmask32 _kor_mask32(__mmask32 A, __mmask32 B) // AVX512BW
 {
   return (__mmask32)(A | B);
 }
@@ -59,7 +59,7 @@ __forceinline __mmask32 _kor_mask32(__mmask32 A, __mmask32 B) // AVX512BW
 // Helpers
 ************************************/
 
-static __forceinline void check_neighbour_simd(__m512i &neighbour, __m512i &center, __m512i &threshold,
+static AVS_FORCEINLINE void check_neighbour_simd(__m512i &neighbour, __m512i &center, __m512i &threshold,
   __m512i &sum_lo, __m512i &sum_hi, __m512i &cnt)
 {
   auto n_minus_c = _mm512_subs_epu8(neighbour, center); // AVX512BW
@@ -86,7 +86,7 @@ static __forceinline void check_neighbour_simd(__m512i &neighbour, __m512i &cent
   */
 }
 
-static __forceinline void check_neighbour_simd_uint16(__m512i &neighbour, __m512i &center, __m512i &threshold,
+static AVS_FORCEINLINE void check_neighbour_simd_uint16(__m512i &neighbour, __m512i &center, __m512i &threshold,
   __m512i &sum_lo, __m512i &sum_hi, __m512i &cnt)
 {
   auto n_minus_c = _mm512_subs_epu16(neighbour, center);
@@ -118,7 +118,7 @@ static __forceinline void check_neighbour_simd_uint16(__m512i &neighbour, __m512
 // Temporal only AVX512, 8 bit
 ************************************/
 
-static __forceinline void fluxT_core_avx512(const BYTE * currp, 
+static AVS_FORCEINLINE void fluxT_core_avx512(const BYTE * currp,
   const BYTE * prevp, const BYTE * nextp,
   BYTE * destp, int x,  
   __m512i &temporal_threshold_vector,
@@ -227,7 +227,7 @@ void fluxT_avx512(const uint8_t* currp, const int src_pitch,
 // Temporal only AVX512, 16 bit
 ************************************/
 
-__forceinline void fluxT_core_avx512_uint16(const uint8_t * currp, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
+AVS_FORCEINLINE void fluxT_core_avx512_uint16(const uint8_t * currp, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
   __m512i &temporal_threshold_vector
 )
 {
@@ -318,7 +318,7 @@ void fluxT_avx512_uint16(const uint8_t* currp, const int src_pitch,
 // Spatial Temporal AVX2, 8 bit
 ************************************/
 
-__forceinline void fluxST_core_avx512(const BYTE * currp, const int src_pitch,
+AVS_FORCEINLINE void fluxST_core_avx512(const BYTE * currp, const int src_pitch,
   const BYTE * prevp, const BYTE * nextp,
   BYTE * destp, int x,
   __m512i &temporal_threshold_vector,
@@ -453,7 +453,7 @@ void fluxST_avx512(const uint8_t* currp, const int src_pitch, const uint8_t * pr
 /************************************
 // Spatial Temporal AVX2, 16 bit
 ************************************/
-__forceinline void fluxST_core_avx512_uint16(const uint8_t * currp, const int src_pitch, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
+AVS_FORCEINLINE void fluxST_core_avx512_uint16(const uint8_t * currp, const int src_pitch, const uint8_t* prevp, const uint8_t *nextp, uint8_t *destp, int x,
   __m512i &temporal_threshold_vector,
   __m512i &spatial_threshold_vector
 )
