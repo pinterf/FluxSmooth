@@ -8,16 +8,16 @@
 // BW: starting with Skylake X and Cannon Lake.
 #if defined(CLANG)
 #if !defined(__AVX512F__) || !defined(__AVX512BW__)
-#error This source file will only work properly when compiled with AVX512F and AVX512BW option. Set -mavx512f -mavx512bw command line options for this file.
+#error "This source file will only work properly when compiled with AVX512F and AVX512BW option. Set -mavx512f -mavx512bw command line options for this file."
 #endif
 #else
 #if defined(GCC)
 #if !defined(__AVX512F__) || !defined(__AVX512BW__)
-#error This source file will only work properly when compiled with AVX512F and AVX512BW option. Set -mavx512f -mavx512bw command line options for this file.
+#error "This source file will only work properly when compiled with AVX512F and AVX512BW option. Set -mavx512f -mavx512bw command line options for this file."
 #endif
 #else
 #if !defined(__AVX512BW__) // MSVC may not define __AVX512F__
-#error This source file will only work properly when compiled with AVX512 option. Set /arch=AVX512 to command line options for this file.
+#error "This source file will only work properly when compiled with AVX512 option. Set /arch=AVX512 to command line options for this file."
 #endif
 #endif
 #endif

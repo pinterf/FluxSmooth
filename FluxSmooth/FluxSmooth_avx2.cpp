@@ -4,7 +4,7 @@
 #include "immintrin.h" // AVX
 
 #if !defined(__AVX2__)
-#error This source file will only work properly when compiled with AVX2 option"
+#error "This source file will only work properly when compiled with AVX2 option"
 #endif
 
 /************************************
