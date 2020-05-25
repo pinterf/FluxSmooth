@@ -26,12 +26,12 @@
 ************************************/
 
 // SSE4.1 simulation for SSE2
-static __forceinline __m128i _MM_BLENDV_EPI8(__m128i const &a, __m128i const &b, __m128i const &selector) {
+static AVS_FORCEINLINE __m128i _MM_BLENDV_EPI8(__m128i const &a, __m128i const &b, __m128i const &selector) {
   return _mm_or_si128(_mm_and_si128(selector, b), _mm_andnot_si128(selector, a));
 }
 
 // non-existant simd
-static __forceinline __m128i _MM_CMPLE_EPU16(__m128i x, __m128i y)
+static AVS_FORCEINLINE __m128i _MM_CMPLE_EPU16(__m128i x, __m128i y)
 {
   // Returns 0xFFFF where x <= y:
   return _mm_cmpeq_epi16(_mm_subs_epu16(x, y), _mm_setzero_si128());
@@ -43,7 +43,7 @@ static __forceinline __m128i _MM_CMPLE_EPU16(__m128i x, __m128i y)
 #define _mm_cmple_epu8(a, b) _mm_cmpge_epu8(b, a)
 
 // non-existant simd
-static __forceinline __m128i _mm_cmpgt_epu8(__m128i x, __m128i y)
+static AVS_FORCEINLINE __m128i _mm_cmpgt_epu8(__m128i x, __m128i y)
 {
   // Returns 0xFF where x > y:
   return _mm_andnot_si128(
@@ -54,7 +54,7 @@ static __forceinline __m128i _mm_cmpgt_epu8(__m128i x, __m128i y)
 
 #define _mm_cmplt_epu8(a, b) _mm_cmpgt_epu8(b, a)
 
-static __forceinline __m128i _mm_cmpge_epi16(__m128i x, __m128i y)
+static AVS_FORCEINLINE __m128i _mm_cmpge_epi16(__m128i x, __m128i y)
 {
   // Returns 0xFFFF where x >= y:
   return _mm_or_si128(_mm_cmpeq_epi16(x, y), _mm_cmpgt_epi16(x, y));

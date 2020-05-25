@@ -6,7 +6,11 @@
 // There is no copyright on this code, and there are no conditions
 // on its distribution or use. Do with it what you will.
 
+#ifdef AVS_WINDOWS
 #include <windows.h>
+#else
+#include "avs/posix.h"
+#endif
 #include <cassert>
 #include "avisynth.h"
 #include "FluxSmooth.h"
@@ -47,7 +51,7 @@ FluxSmoothST::FluxSmoothST(PClip _child, int _temporal_threshold, int _spatial_t
     env->ThrowError("FluxSmoothST: cannot apply opt: SSE2 is not supported");
 
   const int *current_planes = (vi.IsYUV() || vi.IsYUVA()) ? planes_y : planes_r;
-  int planecount = min(vi.NumComponents(), 3);
+  int planecount = std::min(vi.NumComponents(), 3);
   int bits_per_pixel = vi.BitsPerComponent();
 
   for (int i = 0; i < planecount; i++) {
@@ -127,7 +131,7 @@ PVideoFrame __stdcall FluxSmoothST::GetFrame(int n, IScriptEnvironment * env)
   PVideoFrame prevf = child->GetFrame(n - 1, env);
   PVideoFrame nextf = child->GetFrame(n + 1, env);
 
-  int planecount = min(vi.NumComponents(), 3);
+  int planecount = std::min(vi.NumComponents(), 3);
 
   for (int i = 0; i < planecount; i++)
   {
@@ -204,7 +208,7 @@ FluxSmoothT::FluxSmoothT(PClip _child, int _temporal_threshold, bool _luma, bool
     env->ThrowError("FluxSmoothT: cannot apply opt: SSE2 is not supported");
 
   const int *current_planes = (vi.IsYUV() || vi.IsYUVA()) ? planes_y : planes_r;
-  int planecount = min(vi.NumComponents(), 3);
+  int planecount = std::min(vi.NumComponents(), 3);
   int bits_per_pixel = vi.BitsPerComponent();
 
   for (int i = 0; i < planecount; i++) {
@@ -275,7 +279,7 @@ PVideoFrame __stdcall FluxSmoothT::GetFrame(int n, IScriptEnvironment * env)
   PVideoFrame prevf = child->GetFrame(n - 1, env);
   PVideoFrame nextf = child->GetFrame(n + 1, env);
 
-  int planecount = min(vi.NumComponents(), 3);
+  int planecount = std::min(vi.NumComponents(), 3);
 
   for (int i = 0; i < planecount; i++)
   {
